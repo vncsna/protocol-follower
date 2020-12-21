@@ -1,6 +1,4 @@
-// TODO: Handle errors
-// TODO: Tweet protocol messages
-
+// TODO: Tweet cool protocol messages
 // HOWTO: Check size with Object.keys(_).length
 
 require('dotenv').config()
@@ -11,108 +9,127 @@ const fs = require('fs')
 const twitter = new twit(config)
 
 function show_user(user_id){
-    twitter.get(
-        'users/show',
-        {user_id: user_id},
-        function (err, user, response){
-            if(err == undefined){
-                console.log(user)
-            }
-        }
-    )
-}
-
-function unfollow_user(user_id){
-    twitter.post(
-        'friendship/destroy',
-        {user_id: user_id},
-        function (err, user, response){
-            if(err == undefined){
-                console.log(`Unfollowing @${user.screen_name}!!`)
-            }
-        }
-    )
+    twitter
+        .get(
+            'users/show',
+            {user_id: user_id}
+        )
+        .then(result => {
+            console.log(result)
+        })
+        .catch(error => {
+            console.log('show_user')
+            console.log(error)
+        })
 }
 
 function follow_user(user_id){
-    twitter.post(
-        'friendships/create',
-        {user_id: user_id,
-        follow: false},
-        function (err, user, response){
-            if (err == undefined){
-                twitter.post(
-                    'statuses/update',
-                    {'status': `Following @${user.screen_name}!!`}
-                )
-            }
-        }
-    )
+    twitter
+        .post(
+            'friendships/create',
+            {user_id: user_id,
+            follow: false}
+        )
+        .then(result => {
+            tweet = `Following @${result.data.screen_name}!!`
+            twitter.post(
+                'statuses/update',
+                {'status': tweet}
+            )
+            console.log(tweet)
+        })
+        .catch(error => {
+            console.log('follow_user')
+            console.log(error)
+        })
 }
 
-let cursor = '-1'
-while(cursor != '0'){
-    console.log('ENTROU AQUI 1')
+function unfollow_user(user_id){
     twitter
-        .get('friends/list', 
+        .post(
+            'friendships/destroy',
+            {user_id: user_id}
+        )
+        .then(result => {
+            console.log(`Unfollowing @${result.data.screen_name}`)
+        })
+        .catch(error => {
+            console.log('unfollow_user')
+            console.log(error)
+        })
+}
+
+function unfollow_non_protocol(cursor='-1'){
+    twitter
+        .get(
+            'friends/list', 
             {screen_name: 'SirProtocolBot',
             cursor: cursor, 
             skip_status: true,
-            include_user_entities: false})
-        .then(function (result){
-            console.log('ENTROU AQUI 2')
-            users = result.data.users
-            for(let user of users){
-                console.log(user.screen_name)
-                if(!user.description.includes('protocol') && 
-                   !user.screen_name.includes('protocol') && 
-                   !user.name.includes('protocol')){
+            include_user_entities: false}
+        )
+        .then(result => {
+            let friends = result.data
+            for(let user of friends.users){
+                if(!user.description.toLowerCase().includes('protocol') && 
+                   !user.screen_name.toLowerCase().includes('protocol') && 
+                   !user.name.toLowerCase().includes('protocol')){
                     console.log(user.screen_name)
-                    //unfollow_user(user.user_id)
+                    unfollow_user(user.id_str)
                 }
             }
-            cursor = result.data.next_cursor_str
+            cursor = friends.next_cursor_str
+            return (cursor != '0' ? unfollow_non_protocol(cursor) : 0)
         })
-    break
+        .catch(error => {
+            console.log('unfollow_non_protocol')
+            console.log(error)
+        })
 }
 
-if(false){
-let number = 0
-let friend_found = false
-while(number < 50 && !friend_found){
-    friend_found = true
-    twitter.get(
-        'users/search', 
-        {q: 'protocol',
-         page: number,
-         count: 20,
-         include_entities: false}, 
-        function (err, users, response){
+function follow_protocol(number=0){
+    twitter
+        .get(
+            'users/search', 
+            {q: 'protocol',
+            page: number,
+            count: 20,
+            include_entities: false}
+        )
+        .then(result => {
             let user_id = []
-            for(let user of users){
-                if(user.description.includes('protocol') || 
-                   user.screen_name.includes('protocol') || 
-                   user.name.includes('protocol')){
-                       user_id.push(user.id_str)
-                   }
+            for(let user of result.data){
+                if (user.description.includes('protocol') || 
+                    user.screen_name.includes('protocol') || 
+                    user.name.includes('protocol')){
+                    user_id.push(user.id_str)
+                }
             }
-            twitter.get(
-                'friendships/lookup', 
-                {user_id: user_id},
-                function (err, friends, response){
-                    console.log(friends)
-                    for(let friend of friends){
+
+            twitter
+                .get(
+                    'friendships/lookup', 
+                    {user_id: user_id}
+                )
+                .then(result => {
+                    for(let friend of result.data){
                         if(!friend.connections.includes('following')){
-                            console.log(friend.id_str)
                             follow_user(friend.id_str)
-                            found_friend = true
-                            break
+                            return 0
                         }
                     }
-                }
-            )
-        }
-    )
-    number += 1
+                    return follow_protocol(number + 1)
+                })
+                .catch(error => {
+                    console.log('follow_protocol:friendship/lookup')
+                    console.log(error)
+                })
+        })
+        .catch(error => {
+            console.log('follow_protocol')
+            console.log(error)
+        })
 }
-}
+
+unfollow_non_protocol()
+follow_protocol()
