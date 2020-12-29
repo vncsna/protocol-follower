@@ -11,7 +11,7 @@ function follow_user(user_id){
             follow: false}
         )
         .then(result => {
-            let tweet_pt = `Seguindo @${result.data.screen_name}`
+            let tweet_pt = `Seguindo @${result.data.screen_name}!?`
             let tweet_en = `Following @${result.data.screen_name}!!`
             let tweet = coin_toss ? tweet_pt : tweet_en
             twitter.post(
@@ -77,7 +77,7 @@ function unfollow_non_protocol(cursor='-1'){
 }
 
 function follow_protocol(number=0){
-    let query = coin_toss ? 'protocol' : 'protocolo'
+    let query = coin_toss ? 'protocolo' : 'protocol'
 
     twitter
         .get(
