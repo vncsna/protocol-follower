@@ -103,7 +103,9 @@ function follow_protocol(number=0){
                 )
                 .then(result => {
                     for(let friend of result.data){
-                        if(!friend.connections.includes('following')){
+                        if(!friend.connections.includes('blocking') &&
+                           !friend.connections.includes('following') &&
+                           !friend.connections.includes('following_requested')){
                             follow_user(friend.id_str)
                             return 0
                         }
