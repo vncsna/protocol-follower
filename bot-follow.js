@@ -3,6 +3,10 @@ const config = require('./config')
 const twit = require('twit')
 const twitter = new twit(config)
 
+function coin_toss(skew=0.5){
+    return Math.random() < skew
+}
+
 function follow_user(user_id){
     twitter
         .post(
@@ -13,7 +17,7 @@ function follow_user(user_id){
         .then(result => {
             let tweet_pt = `Seguindo @${result.data.screen_name}!?`
             let tweet_en = `Following @${result.data.screen_name}!!`
-            let tweet = coin_toss ? tweet_pt : tweet_en
+            let tweet = coin_toss() ? tweet_pt : tweet_en
             twitter.post(
                 'statuses/update',
                 {'status': tweet}
@@ -35,7 +39,7 @@ function unfollow_user(user_id){
         .then(result => {
             let tweet_pt = `Ignorando @${result.data.screen_name}`
             let tweet_en = `Unfollowing @${result.data.screen_name}`
-            let tweet = coin_toss ? tweet_pt : tweet_en
+            let tweet = coin_toss() ? tweet_pt : tweet_en
             console.log(tweet)
         })
         .catch(error => {
@@ -77,7 +81,7 @@ function unfollow_non_protocol(cursor='-1'){
 }
 
 function follow_protocol(number=0){
-    let query = coin_toss ? 'protocolo' : 'protocol'
+    let query = coin_toss() ? 'protocolo' : 'protocol'
 
     twitter
         .get(
@@ -123,20 +127,5 @@ function follow_protocol(number=0){
         })
 }
 
-function post(){
-    let tweet_pt = 'Esse perfil segue todos os protocolos!!'
-    let tweet_en = "Dude, I'm following all protocols!"
-    let tweet = coin_toss ? tweet_pt: tweet_en
-    if(Math.random() < 0.04){
-        twitter.post(
-            'statuses/update',
-            {'status': tweet}
-        )
-    }
-}
-
-let coin_toss = Math.random() < .5
-
 unfollow_non_protocol()
 follow_protocol()
-post()
