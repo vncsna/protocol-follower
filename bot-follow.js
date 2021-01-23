@@ -1,11 +1,7 @@
-require('dotenv').config()
-const config = require('./config')
-const twit = require('twit')
-const twitter = new twit(config)
-
-function coin_toss(skew=0.5){
-    return Math.random() < skew
-}
+require('dotenv').config();
+const config = require('./config');
+const twit = require('twit');
+const twitter = new twit(config);
 
 function follow_user(user_id){
     twitter
@@ -17,7 +13,7 @@ function follow_user(user_id){
         .then(result => {
             let tweet_pt = `Seguindo @${result.data.screen_name}!?`
             let tweet_en = `Following @${result.data.screen_name}!!`
-            let tweet = coin_toss() ? tweet_pt : tweet_en
+            let tweet = Math.random() < .5 ? tweet_pt : tweet_en
             twitter.post(
                 'statuses/update',
                 {'status': tweet}
@@ -39,7 +35,7 @@ function unfollow_user(user_id){
         .then(result => {
             let tweet_pt = `Ignorando @${result.data.screen_name}`
             let tweet_en = `Unfollowing @${result.data.screen_name}`
-            let tweet = coin_toss() ? tweet_pt : tweet_en
+            let tweet = Math.random() < .5 ? tweet_pt : tweet_en
             console.log(tweet)
         })
         .catch(error => {
@@ -81,7 +77,7 @@ function unfollow_non_protocol(cursor='-1'){
 }
 
 function follow_protocol(number=0){
-    let query = coin_toss() ? 'protocolo' : 'protocol'
+    let query = Math.random() < .5 ? 'protocolo' : 'protocol'
 
     twitter
         .get(
